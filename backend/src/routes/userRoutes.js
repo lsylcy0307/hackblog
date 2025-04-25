@@ -16,11 +16,13 @@ const router = express.Router();
 // Public routes
 router.post('/register', registerUser);
 router.post('/login', loginUser);
-router.get('/:id', getUser);
 
 // Protected routes
 router.get('/me', protect, getMe);
 router.put('/me', protect, updateProfile);
+
+// Public user route - must be after /me routes
+router.get('/:id', getUser);
 
 // Admin routes
 router.get('/', protect, authorize('admin'), getUsers);
