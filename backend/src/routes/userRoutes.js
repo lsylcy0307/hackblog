@@ -6,7 +6,8 @@ const {
   updateProfile,
   getUsers,
   getUser,
-  updateUserRole
+  updateUserRole,
+  getMyArticles
 } = require('../controllers/userController');
 
 const { protect, authorize } = require('../middleware/auth');
@@ -20,6 +21,7 @@ router.post('/login', loginUser);
 // Protected routes
 router.get('/me', protect, getMe);
 router.put('/me', protect, updateProfile);
+router.get('/me/articles', protect, getMyArticles);
 
 // Public user route - must be after /me routes
 router.get('/:id', getUser);

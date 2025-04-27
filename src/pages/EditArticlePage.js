@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import styled from 'styled-components';
 import Layout from '../components/layout/Layout';
@@ -84,6 +84,52 @@ const BackButton = styled(Button)`
   margin-bottom: ${theme.spacing.lg};
 `;
 
+const FileInputContainer = styled.div`
+  position: relative;
+  margin-top: ${theme.spacing.sm};
+`;
+
+const FileInputLabel = styled.label`
+  display: inline-flex;
+  align-items: center;
+  padding: ${theme.spacing.sm} ${theme.spacing.md};
+  background: ${theme.colors.lightBackground};
+  border: 1px solid ${theme.colors.border};
+  border-radius: ${theme.borderRadius.sm};
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  
+  &:hover {
+    background: ${theme.colors.border + '50'};
+  }
+`;
+
+const HiddenFileInput = styled.input`
+  position: absolute;
+  left: -9999px;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+`;
+
+const ImagePreview = styled.div`
+  margin-top: ${theme.spacing.md};
+  
+  img {
+    max-width: 100%;
+    max-height: 200px;
+    border-radius: ${theme.borderRadius.md};
+    border: 1px solid ${theme.colors.border};
+  }
+`;
+
+const ImageFileName = styled.div`
+  margin-top: ${theme.spacing.sm};
+  font-size: 0.85rem;
+  color: ${theme.colors.lightText};
+`;
+
 const EditArticlePage = () => {
   const { currentUser, isAuthenticated, isAdmin, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -99,6 +145,9 @@ const EditArticlePage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [coverImage, setCoverImage] = useState(null);
+  const [coverImagePreview, setCoverImagePreview] = useState('');
+  const fileInputRef = useRef(null);
   
   const categories = [
     { id: 'engineering', label: 'Engineering' },
@@ -130,6 +179,11 @@ const EditArticlePage = () => {
           article_content: { content },
           tags: article.tags || []
         });
+        
+        // Set the cover image preview from the URL if it exists
+        if (article.cover_picture_url) {
+          setCoverImagePreview(article.cover_picture_url);
+        }
         
         setLoading(false);
       } catch (err) {
@@ -208,6 +262,59 @@ const EditArticlePage = () => {
     });
   };
 
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+    }
+  };
+
+  const handleCoverImageChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setError('Image size should be less than 5MB');
+        return;
+      }
+      
+      // Validate file type
+      if (!file.type.match('image.*')) {
+        setError('Please select an image file');
+        return;
+      }
+      
+      // Set the new cover image and clear any existing URL
+      setCoverImage(file);
+      setFormData(prev => ({
+        ...prev,
+        cover_picture_url: '' // Clear existing URL since we're replacing it
+      }));
+      
+      // Create preview URL
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setCoverImagePreview(event.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+  
+  const handleRemoveCoverImage = () => {
+    // Clear both the new file and any existing URL
+    setCoverImage(null);
+    setCoverImagePreview('');
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+    
+    // Clear the cover_picture_url in formData
+    setFormData(prev => ({
+      ...prev,
+      cover_picture_url: ''
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -231,9 +338,43 @@ const EditArticlePage = () => {
     
     try {
       console.log('Updating article...');
-      console.log('Sending article data:', formData);
       
-      const response = await apiService.articles.update(id, formData);
+      // Create form data to send both text data and file
+      const formDataToSend = new FormData();
+      
+      // Add text fields
+      formDataToSend.append('title', formData.title);
+      formDataToSend.append('article_content', JSON.stringify({ 
+        content: formData.article_content.content 
+      }));
+      
+      // Add tags as a JSON string
+      formDataToSend.append('tags', JSON.stringify(formData.tags));
+      
+      // Handle cover image:
+      // 1. If there's a new cover image file, use it (will replace existing)
+      // 2. If no new file but we have an existing URL, keep it 
+      // 3. If both are null/empty, it means we're removing the cover image
+      if (coverImage) {
+        formDataToSend.append('coverImage', coverImage);
+        formDataToSend.append('replace_cover', 'true'); // Signal to replace existing cover
+      } else if (formData.cover_picture_url) {
+        formDataToSend.append('cover_picture_url', formData.cover_picture_url);
+      } else {
+        // No cover image, signal to remove existing one if any
+        formDataToSend.append('remove_cover', 'true');
+      }
+      
+      // Log what we're doing with the cover image
+      if (coverImage) {
+        console.log('Replacing cover image with new upload');
+      } else if (formData.cover_picture_url) {
+        console.log('Keeping existing cover image');
+      } else {
+        console.log('Removing cover image');
+      }
+      
+      const response = await apiService.articles.update(id, formDataToSend);
       console.log('Article update response:', response.data);
       
       navigate(`/articles/${id}`);
@@ -276,19 +417,46 @@ const EditArticlePage = () => {
               name="title"
               value={formData.title}
               onChange={handleChange}
+              onKeyDown={handleKeyDown}
               placeholder="Enter article title"
               required
             />
           </FormGroup>
           
           <FormGroup>
-            <Input
-              label="Cover Image URL"
-              name="cover_picture_url"
-              value={formData.cover_picture_url}
-              onChange={handleChange}
-              placeholder="Enter URL for cover image (optional)"
-            />
+            <label>Cover Image</label>
+            <FileInputContainer>
+              <FileInputLabel>
+                {coverImagePreview ? 'Change cover image' : 'Choose a cover image'}
+                <HiddenFileInput 
+                  type="file"
+                  ref={fileInputRef}
+                  accept="image/*"
+                  onChange={handleCoverImageChange}
+                />
+              </FileInputLabel>
+              
+              {coverImagePreview && (
+                <>
+                  <ImagePreview>
+                    <img 
+                      src={coverImagePreview} 
+                      alt="Cover preview" 
+                    />
+                  </ImagePreview>
+                  <ImageFileName>
+                    {coverImage?.name || 'Current cover image'}{' '}
+                    <Button 
+                      variant="text" 
+                      size="sm" 
+                      onClick={handleRemoveCoverImage}
+                    >
+                      Remove
+                    </Button>
+                  </ImageFileName>
+                </>
+              )}
+            </FileInputContainer>
           </FormGroup>
           
           <FormGroup>

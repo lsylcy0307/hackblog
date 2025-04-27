@@ -5,7 +5,8 @@ const {
   createArticle,
   updateArticle,
   deleteArticle,
-  pinArticle
+  pinArticle,
+  getMyArticles
 } = require('../controllers/articleController');
 
 const { protect, authorize } = require('../middleware/auth');
@@ -14,6 +15,11 @@ const router = express.Router();
 
 // Public routes
 router.get('/', getArticles);
+
+// Protected routes - specific routes need to come before /:id
+router.get('/mine', protect, getMyArticles);
+
+// Public routes with params
 router.get('/:id', getArticle);
 
 // Author routes (author & admin)

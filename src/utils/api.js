@@ -64,8 +64,28 @@ const apiService = {
   articles: {
     getAll: (params) => api.get('/articles', { params }),
     getById: (id) => api.get(`/articles/${id}`),
-    create: (articleData) => api.post('/articles', articleData),
-    update: (id, articleData) => api.put(`/articles/${id}`, articleData),
+    create: (articleData) => {
+      // Check if articleData is FormData (for file uploads)
+      const isFormData = articleData instanceof FormData;
+      return api.post('/articles', articleData, 
+        isFormData ? {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        } : {}
+      );
+    },
+    update: (id, articleData) => {
+      // Check if articleData is FormData (for file uploads)
+      const isFormData = articleData instanceof FormData;
+      return api.put(`/articles/${id}`, articleData,
+        isFormData ? {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        } : {}
+      );
+    },
     delete: (id) => api.delete(`/articles/${id}`),
     pin: (id, pinned) => api.patch(`/articles/${id}/pin`, { pinned }),
     getByAuthor: (authorId) => api.get(`/articles?authors=${authorId}`),

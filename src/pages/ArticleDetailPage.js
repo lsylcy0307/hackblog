@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import styled from 'styled-components';
 import Layout from '../components/layout/Layout';
@@ -120,96 +120,109 @@ const AuthorUsername = styled.div`
 `;
 
 const ArticleContent = styled.div`
-  font-size: 1.1rem;
-  line-height: 1.7;
-  color: ${theme.colors.text};
+  font-size: 18px;
+  line-height: 1.8;
   
-  h1 {
-    font-size: 2em;
-    font-weight: bold;
-    margin-top: 1em;
+  h1, h2, h3, h4, h5, h6 {
+    margin-top: 1.5em;
     margin-bottom: 0.5em;
-  }
-  
-  h2 {
-    font-size: 1.5em;
-    font-weight: bold;
-    margin-top: 1em;
-    margin-bottom: 0.5em;
-  }
-  
-  h3 {
-    font-size: 1.3em;
-    font-weight: bold;
-    margin-top: 1em;
-    margin-bottom: 0.5em;
+    font-weight: 700;
   }
   
   p {
-    margin: 0.75em 0;
-  }
-  
-  ul, ol {
-    padding-left: 1.5em;
-    margin-bottom: 1em;
-  }
-  
-  blockquote {
-    border-left: 3px solid ${theme.colors.primary};
-    padding-left: 1em;
-    margin-left: 0;
-    color: ${theme.colors.lightText};
-    font-style: italic;
-    margin: 1em 0;
-  }
-  
-  code {
-    background-color: ${theme.colors.lightBackground};
-    padding: 0.2em 0.4em;
-    border-radius: ${theme.borderRadius.sm};
-    font-family: monospace;
-  }
-  
-  pre {
-    background-color: ${theme.colors.lightBackground};
-    padding: 0.75em;
-    border-radius: ${theme.borderRadius.md};
-    overflow-x: auto;
-    margin: 1em 0;
-    
-    code {
-      background: none;
-      padding: 0;
-    }
-  }
-  
-  img {
-    max-width: 100%;
-    height: auto;
-    margin: 1em 0;
-    border-radius: ${theme.borderRadius.md};
+    margin-bottom: 1.5em;
   }
   
   a {
-    color: ${theme.colors.primary};
-    text-decoration: underline;
+    color: #0070f3;
+    text-decoration: none;
+    &:hover {
+      text-decoration: underline;
+    }
   }
   
-  mark {
-    background-color: rgba(255, 230, 0, 0.3);
-    border-radius: 0.1em;
+  ul, ol {
+    margin-left: 2em;
+    margin-bottom: 1.5em;
   }
   
-  .text-align-center {
-    text-align: center;
+  blockquote {
+    border-left: 4px solid #ddd;
+    padding-left: 1em;
+    margin-left: 0;
+    color: #666;
   }
   
-  .text-align-right {
-    text-align: right;
+  pre {
+    background-color: #f5f5f5;
+    padding: 1em;
+    border-radius: 4px;
+    overflow-x: auto;
   }
   
-  .text-align-left {
-    text-align: left;
+  code {
+    background-color: #f5f5f5;
+    padding: 0.2em 0.4em;
+    border-radius: 3px;
+    font-family: monospace;
+  }
+  
+  /* Image sizing classes that match the editor */
+  img.img-small {
+    max-width: 25% !important;
+    width: 25% !important;
+    display: block !important;
+    margin: 1em 0 !important;
+    box-sizing: border-box !important;
+  }
+  
+  img.img-medium {
+    max-width: 50% !important;
+    width: 50% !important;
+    display: block !important;
+    margin: 1em 0 !important;
+    box-sizing: border-box !important;
+  }
+  
+  img.img-large {
+    max-width: 100% !important;
+    width: 100% !important;
+    display: block !important;
+    margin: 1em 0 !important;
+    box-sizing: border-box !important;
+  }
+  
+  /* Target images with class names containing our size keywords */
+  img[class*="img-small"] {
+    max-width: 25% !important;
+    width: 25% !important;
+    display: block !important;
+    margin: 1em 0 !important;
+    box-sizing: border-box !important;
+  }
+  
+  img[class*="img-medium"] {
+    max-width: 50% !important;
+    width: 50% !important;
+    display: block !important;
+    margin: 1em 0 !important;
+    box-sizing: border-box !important;
+  }
+  
+  img[class*="img-large"] {
+    max-width: 100% !important;
+    width: 100% !important;
+    display: block !important;
+    margin: 1em 0 !important;
+    box-sizing: border-box !important;
+  }
+  
+  /* Default image style if no class is present */
+  img:not(.img-small):not(.img-medium):not(.img-large):not([class*="img-"]) {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 1em 0;
   }
 `;
 
@@ -239,6 +252,129 @@ const ArticleDetailPage = () => {
   const [article, setArticle] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const articleContentRef = useRef(null);
+  const [content, setContent] = useState('');
+
+  // Add global styles to ensure image classes work across the site
+  useEffect(() => {
+    // Create a style element for global CSS if it doesn't exist
+    if (!document.getElementById('article-image-global-styles')) {
+      const styleEl = document.createElement('style');
+      styleEl.id = 'article-image-global-styles';
+      styleEl.innerHTML = `
+        /* Global image size styles that will apply in article view */
+        img.img-small {
+          max-width: 25% !important;
+          width: 25% !important;
+          display: block !important;
+          margin: 1em 0 !important;
+          box-sizing: border-box !important;
+        }
+        
+        img.img-medium {
+          max-width: 50% !important;
+          width: 50% !important;
+          display: block !important;
+          margin: 1em 0 !important;
+          box-sizing: border-box !important;
+        }
+        
+        img.img-large {
+          max-width: 100% !important;
+          width: 100% !important;
+          display: block !important;
+          margin: 1em 0 !important;
+          box-sizing: border-box !important;
+        }
+
+        /* Force image sizing for all article content */
+        .article-content img.img-small,
+        .article-content img[class*="img-small"] {
+          max-width: 25% !important;
+          width: 25% !important;
+        }
+        
+        .article-content img.img-medium,
+        .article-content img[class*="img-medium"] {
+          max-width: 50% !important;
+          width: 50% !important;
+        }
+        
+        .article-content img.img-large,
+        .article-content img[class*="img-large"] {
+          max-width: 100% !important;
+          width: 100% !important;
+        }
+      `;
+      document.head.appendChild(styleEl);
+    }
+    
+    return () => {
+      // Leave the styles for other article views
+    };
+  }, []);
+
+  // Debug image classes in the content
+  useEffect(() => {
+    if (content) {
+      // Create a temporary div to parse the HTML content
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = content;
+      
+      // Get all image elements
+      const images = tempDiv.querySelectorAll('img');
+      
+      if (images.length > 0) {
+        console.log(`Found ${images.length} images in article content`);
+      }
+    }
+  }, [content]);
+  
+  // Apply size classes directly to images after rendering
+  useEffect(() => {
+    // This runs after the content is rendered to the DOM
+    if (articleContentRef.current && content) {
+      const contentElement = articleContentRef.current;
+      const images = contentElement.querySelectorAll('img');
+      
+      // Process each image to ensure sizes are applied
+      images.forEach(img => {
+        const classList = img.className.split(/\s+/);
+        
+        // Check for size classes in the classList or attributes
+        const hasSmallClass = classList.some(cls => cls.includes('img-small')) || 
+          (img.attributes[1]['name'].includes('img-small'));
+            
+        const hasMediumClass = classList.some(cls => cls.includes('img-medium')) || 
+          (img.attributes[1]['name'].includes('img-medium'));
+            
+        const hasLargeClass = classList.some(cls => cls.includes('img-large')) || 
+          (img.attributes[1]['name'].includes('img-large'));
+        
+        // If no size class is found, default to medium
+        if (!hasSmallClass && !hasMediumClass && !hasLargeClass) {
+          img.classList.add('img-medium');
+        }
+        
+        // Ensure img element takes up the right width
+        if (hasSmallClass) {
+          img.style.maxWidth = '25%';
+          img.style.width = '25%';
+        } else if (hasMediumClass) {
+          img.style.maxWidth = '50%';
+          img.style.width = '50%';
+        } else if (hasLargeClass) {
+          img.style.maxWidth = '100%';
+          img.style.width = '100%';
+        }
+        
+        // Additional styles common to all images
+        img.style.display = 'block';
+        img.style.margin = '1em 0';
+        img.style.boxSizing = 'border-box';
+      });
+    }
+  }, [content]);
 
   useEffect(() => {
     const fetchArticle = async () => {
@@ -246,6 +382,19 @@ const ArticleDetailPage = () => {
       try {
         const response = await apiService.articles.getById(id);
         setArticle(response.data.data);
+        
+        // Process content
+        let articleContent = response.data.data.article_content;
+        if (typeof articleContent === 'object' && articleContent.content) {
+          articleContent = articleContent.content;
+        } else if (typeof articleContent === 'string') {
+          // Already a string, no need to do anything
+        } else {
+          articleContent = ''; // Default to empty string if content is undefined or null
+        }
+        
+        // Sanitize and set content
+        setContent(sanitizeContent(articleContent));
       } catch (err) {
         console.error('Error fetching article:', err);
         setError('Failed to load article. Please try again.');
@@ -279,6 +428,55 @@ const ArticleDetailPage = () => {
     }
   };
 
+  // Ensure content is properly sanitized but still preserves HTML tags
+  const sanitizeContent = (htmlContent) => {
+    // Simple sanitization to replace problematic patterns
+    // This prevents HTML tags from being rendered as text
+    if (!htmlContent) return '';
+    
+    // First, properly decode HTML entities that might have been double-encoded
+    let cleaned = htmlContent
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&amp;/g, '&')
+      .replace(/&quot;/g, '"');
+    
+    // Fix potential issues with self-closing tags and image data
+    cleaned = cleaned
+      // Make sure data URLs are not broken
+      .replace(/src="(data:[^"]*?)"/g, function(match, dataUrl) {
+        // Ensure data URL doesn't have escaped quotes or entities
+        return 'src="' + dataUrl.replace(/&quot;/g, '"') + '"';
+      })
+      // Ensure proper tag closing for images
+      .replace(/<img([^>]*)>/g, '<img$1 />')
+      // Specifically preserve image classes - fix if they got mangled
+      .replace(/<img([^>]*?)class="([^"]*?)"([^>]*?)>/g, '<img$1class="$2"$3 />')
+      .replace(/<img([^>]*?)class=([^\s>]*?)([^>]*?)>/g, '<img$1class="$2"$3 />');
+      
+    // Extra check specifically for size classes, ensuring they're properly applied
+    ['small', 'medium', 'large'].forEach(size => {
+      const regex = new RegExp(`<img([^>]*?)class="([^"]*?)img-${size}([^"]*?)"([^>]*?)>`, 'g');
+      const replacement = `<img$1class="$2img-${size}$3"$4 />`;
+      cleaned = cleaned.replace(regex, replacement);
+      
+      // Another variation
+      const regex2 = new RegExp(`<img([^>]*?)class="([^"]*?)img-${size}([^"]*?)"([^>]*?) />`, 'g');
+      cleaned = cleaned.replace(regex2, replacement);
+    });
+    
+    // Clean up any duplicate closing tags
+    cleaned = cleaned.replace(/<img([^>]*?) \/\s*\/>/g, '<img$1 />');
+    
+    // Handle img-small, img-medium, img-large directly
+    cleaned = cleaned.replace(
+      /<img([^>]*?)(class="[^"]*?)(img-(?:small|medium|large))([^"]*?)"([^>]*?)>/g,
+      '<img$1$2$3$4"$5 />'
+    );
+    
+    return cleaned;
+  };
+
   if (loading) {
     return <Layout><Spinner size="lg" /></Layout>;
   }
@@ -302,12 +500,6 @@ const ArticleDetailPage = () => {
     currentUser && (author._id === currentUser._id || author._id === currentUser.id)
   );
   const canEdit = isAuthenticated && (isArticleAuthor || isAdmin);
-
-  // Format article content to display properly
-  let content = article.article_content;
-  if (typeof content === 'object' && content.content) {
-    content = content.content;
-  }
 
   return (
     <Layout>
@@ -372,7 +564,11 @@ const ArticleDetailPage = () => {
           </AuthorsContainer>
         )}
 
-        <ArticleContent dangerouslySetInnerHTML={{ __html: content }} />
+        <ArticleContent 
+          dangerouslySetInnerHTML={{ __html: content }} 
+          className="article-content"
+          ref={articleContentRef}
+        />
         
         {canEdit && (
           <ActionButtons>

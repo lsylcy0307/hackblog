@@ -195,6 +195,33 @@ exports.updateUserRole = async (req, res, next) => {
   }
 };
 
+// @desc    Get current user's articles
+// @route   GET /api/users/me/articles
+// @access  Private
+exports.getMyArticles = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.id).populate({
+      path: 'articles',
+      populate: {
+        path: 'authors',
+        select: 'name username profile_picture_url'
+      }
+    });
+    
+    if (!user) {
+      return next(new ErrorResponse('User not found', 404));
+    }
+    
+    res.status(200).json({
+      success: true,
+      count: user.articles.length,
+      data: user.articles
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // Helper function to get token from model, create cookie and send response
 const sendTokenResponse = (user, statusCode, res) => {
   // Create token

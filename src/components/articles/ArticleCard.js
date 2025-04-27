@@ -113,8 +113,8 @@ const ArticleCard = ({ article }) => {
   const {
     _id,
     title,
-    content,
-    image_url,
+    article_content,
+    cover_picture_url,
     published_date,
     tags = []
   } = article;
@@ -131,7 +131,16 @@ const ArticleCard = ({ article }) => {
     return strippedText.substr(0, maxLength) + '...';
   };
   
-  const excerpt = createExcerpt(content);
+  // Get content text from article_content
+  const getContentText = () => {
+    if (!article_content) return '';
+    if (typeof article_content === 'string') return article_content;
+    if (typeof article_content === 'object' && article_content.content) 
+      return article_content.content;
+    return '';
+  };
+  
+  const excerpt = createExcerpt(getContentText());
   const formattedDate = formatDate(published_date);
   
   // Display at most 2 tags
@@ -146,11 +155,32 @@ const ArticleCard = ({ article }) => {
     navigate(`/articles/${_id}`);
   };
   
+  // Properly format the image URL
+  const getImageUrl = () => {
+    if (!cover_picture_url) return null;
+    
+    // If it's a full URL (starts with http), use it directly
+    if (cover_picture_url.startsWith('http')) {
+      return cover_picture_url;
+    }
+    
+    // If it's a default image, use null to display placeholder
+    if (cover_picture_url === 'default-cover.jpg') {
+      return null;
+    }
+    
+    // Otherwise, prefix with API URL
+    const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
+    return `${API_URL}${cover_picture_url}`;
+  };
+  
+  const imageUrl = getImageUrl();
+  
   return (
     <CardContainer onClick={handleCardClick}>
       <ImageContainer>
-        {image_url ? (
-          <ArticleImage src={image_url} alt={title} />
+        {imageUrl ? (
+          <ArticleImage src={imageUrl} alt={title} />
         ) : (
           <ImagePlaceholder>No image available</ImagePlaceholder>
         )}
@@ -180,8 +210,11 @@ ArticleCard.propTypes = {
   article: PropTypes.shape({
     _id: PropTypes.string.isRequired,
     title: PropTypes.string.isRequired,
-    content: PropTypes.string,
-    image_url: PropTypes.string,
+    article_content: PropTypes.oneOfType([
+      PropTypes.string,
+      PropTypes.object
+    ]),
+    cover_picture_url: PropTypes.string,
     published_date: PropTypes.string,
     tags: PropTypes.arrayOf(PropTypes.string)
   }).isRequired

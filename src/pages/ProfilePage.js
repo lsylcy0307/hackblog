@@ -127,8 +127,27 @@ const ProfilePage = () => {
         class_year: currentUser.class_year || '',
         profile_picture_url: currentUser.profile_picture_url || ''
       });
+    } else {
+      console.log('CurrentUser not available yet');
     }
   }, [currentUser]);
+
+  // Add a new useEffect to ensure we get fresh data from the server
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (isAuthenticated && !authLoading) {
+        try {
+          console.log('Fetching fresh user profile data');
+          const response = await apiService.auth.getProfile();
+          // The AuthContext will update with this data via its interceptor
+        } catch (err) {
+          console.error('Error fetching profile:', err);
+        }
+      }
+    };
+    
+    fetchUserProfile();
+  }, [isAuthenticated, authLoading]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
