@@ -101,6 +101,7 @@ const Footer = () => {
           <FooterLink to="/">Home</FooterLink>
           <FooterLink to="/articles">Articles</FooterLink>
           <FooterLink to="/about">About Us</FooterLink>
+          <FooterLink to="/register">Sign Up</FooterLink>
         </FooterSection>
         
         <FooterSection>

@@ -11,7 +11,7 @@ import { formatDate } from '../utils/helpers';
 
 const ArticleContainer = styled.div`
   max-width: 900px;
-  margin: 0 auto;
+  margin: 2rem auto;
   padding-bottom: ${theme.spacing.xxl};
 `;
 
@@ -504,10 +504,6 @@ const ArticleDetailPage = () => {
   return (
     <Layout>
       <ArticleContainer>
-        <BackButton variant="outline" onClick={handleBack}>
-          ← Back to Articles
-        </BackButton>
-
         <ArticleHeader>
           <ArticleTitle>{article.title}</ArticleTitle>
           

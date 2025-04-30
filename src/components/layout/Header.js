@@ -18,7 +18,7 @@ const NavContainer = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  max-width: ${theme.containers.xl};
+  max-width: ${theme.containers.lg};
   margin: 0 auto;
 `;
 
@@ -64,7 +64,6 @@ const NavLink = styled(Link)`
   
   &:hover, &.active {
     color: ${theme.colors.primary};
-    background-color: ${theme.colors.lightBackground};
   }
   
   @media (max-width: ${theme.breakpoints.md}) {
@@ -147,7 +146,7 @@ const Header = () => {
   return (
     <HeaderContainer>
       <NavContainer>
-        <Logo to="/">Hack4Impact Blog</Logo>
+        <Logo to="/">Hack4Impact</Logo>
         
         <ToggleButton onClick={toggleNav}>
           {navOpen ? '✕' : '☰'}
@@ -155,15 +154,11 @@ const Header = () => {
         
         <NavLinks isOpen={navOpen}>
           <NavLink to="/">Home</NavLink>
-          <NavLink to="/articles">Articles</NavLink>
           
           {!currentUser && (
             <NavButtons>
               <Button variant="outline" size="sm" onClick={() => navigate('/login')}>
                 Sign In
-              </Button>
-              <Button size="sm" onClick={() => navigate('/register')}>
-                Sign Up
               </Button>
             </NavButtons>
           )}

@@ -1,223 +1,171 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import PropTypes from 'prop-types';
+import { Link } from 'react-router-dom';
 import theme from '../../utils/theme';
-import { formatDate } from '../../utils/helpers';
 
-const CardContainer = styled.div`
+const Card = styled(Link)`
+  display: flex;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  overflow: hidden;
+  min-height: 320px;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    min-height: unset;
+  }
+`;
+
+const ContentSection = styled.div`
+  flex: 1;
+  padding: ${theme.spacing.xl};
   display: flex;
   flex-direction: column;
-  height: 100%;
-  background-color: white;
-  border-radius: ${theme.borderRadius.md};
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  text-decoration: none;
-  color: inherit;
-  cursor: pointer;
+`;
+
+const ImageSection = styled.div`
+  width: 45%;
+  display: flex;
+  flex-direction: column;
   
-  &:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+  @media (max-width: 768px) {
+    width: 100%;
+    order: -1;
   }
+`;
+
+const AuthorsSection = styled.div`
+  padding: ${theme.spacing.lg};
 `;
 
 const ImageContainer = styled.div`
-  height: 200px;
-  overflow: hidden;
+  flex: 1;
   position: relative;
+  min-height: 400px;
+  margin-top: 3rem;
+  overflow: hidden;
+  border-radius: 8px;
 `;
 
-const ArticleImage = styled.img`
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.3s ease;
-  
-  ${CardContainer}:hover & {
-    transform: scale(1.05);
+const Category = styled.div`
+  color: ${theme.colors.primary};
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: ${theme.spacing.md};
+`;
+
+const Title = styled.h3`
+  font-size: 2rem;
+  font-weight: 700;
+  color: ${theme.colors.text};
+  margin: 0 0 ${theme.spacing.md} 0;
+  line-height: 1.2;
+`;
+
+const Summary = styled.p`
+  color: ${theme.colors.lightText};
+  font-size: 1.1rem;
+  line-height: 1.5;
+  margin-bottom: ${theme.spacing.md};
+`;
+
+const ReadMore = styled.span`
+  color: ${theme.colors.primary};
+  font-weight: 500;
+  font-size: 1rem;
+  display: inline-block;
+
+  &:hover {
+    color: black;
   }
 `;
 
-const ImagePlaceholder = styled.div`
+const CoverImage = styled.img`
+  position: absolute;
   width: 100%;
   height: 100%;
-  background-color: ${theme.colors.lightBackground};
+  object-fit: cover;
+`;
+
+const AuthorGroup = styled.div`
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: ${theme.spacing.md};
+  margin-bottom: ${theme.spacing.sm};
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+`;
+
+const AuthorImage = styled.img`
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+`;
+
+const AuthorInfo = styled.div`
+  display: flex;
+  flex-direction: column;
+`;
+
+const AuthorName = styled.div`
+  font-weight: 600;
+  color: ${theme.colors.text};
+  font-size: 1rem;
+`;
+
+const AuthorRole = styled.div`
   color: ${theme.colors.lightText};
   font-size: 0.9rem;
 `;
 
-const CardContent = styled.div`
-  padding: ${theme.spacing.lg};
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
-`;
-
-const CardTitle = styled.h3`
-  font-size: 1.25rem;
-  font-weight: 700;
-  margin-bottom: ${theme.spacing.sm};
-  line-height: 1.4;
-  color: ${theme.colors.text};
-`;
-
-const CardExcerpt = styled.p`
-  font-size: 0.95rem;
-  color: ${theme.colors.lightText};
-  line-height: 1.6;
-  margin-bottom: ${theme.spacing.md};
-  flex-grow: 1;
-  
-  /* Line clamp for 3 lines */
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-`;
-
-const CardMeta = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.85rem;
-  color: ${theme.colors.lightText};
-  margin-top: auto;
-`;
-
-const CardDate = styled.span``;
-
-const TagsContainer = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: ${theme.spacing.xs};
-  margin-bottom: ${theme.spacing.md};
-`;
-
-const Tag = styled.span`
-  font-size: 0.75rem;
-  padding: 4px 8px;
-  border-radius: ${theme.borderRadius.sm};
-  background-color: ${theme.colors.lightBackground};
-  color: ${theme.colors.primary};
-  font-weight: 500;
-`;
-
 const ArticleCard = ({ article }) => {
-  const navigate = useNavigate();
+  if (!article) return null;
+
   const {
     _id,
     title,
-    article_content,
+    summary,
+    authors = [],
+    tags = [],
     cover_picture_url,
-    published_date,
-    tags = []
   } = article;
-  
-  // Create excerpt from content
-  const createExcerpt = (text, maxLength = 120) => {
-    if (!text) return '';
-    
-    // Strip HTML tags if any
-    const strippedText = text.replace(/<[^>]*>?/gm, '');
-    
-    if (strippedText.length <= maxLength) return strippedText;
-    
-    return strippedText.substr(0, maxLength) + '...';
-  };
-  
-  // Get content text from article_content
-  const getContentText = () => {
-    if (!article_content) return '';
-    if (typeof article_content === 'string') return article_content;
-    if (typeof article_content === 'object' && article_content.content) 
-      return article_content.content;
-    return '';
-  };
-  
-  const excerpt = createExcerpt(getContentText());
-  const formattedDate = formatDate(published_date);
-  
-  // Display at most 2 tags
-  const displayTags = tags.slice(0, 2);
 
-  const handleTagClick = (tag, e) => {
-    e.stopPropagation();
-    navigate(`/articles?tag=${tag}`);
-  };
-  
-  const handleCardClick = () => {
-    navigate(`/articles/${_id}`);
-  };
-  
-  // Properly format the image URL
-  const getImageUrl = () => {
-    if (!cover_picture_url) return null;
-    
-    // If it's a full URL (starts with http), use it directly
-    if (cover_picture_url.startsWith('http')) {
-      return cover_picture_url;
-    }
-    
-    // If it's a default image, use null to display placeholder
-    if (cover_picture_url === 'default-cover.jpg') {
-      return null;
-    }
-    
-    // Otherwise, prefix with API URL
-    const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
-    return `${API_URL}${cover_picture_url}`;
-  };
-  
-  const imageUrl = getImageUrl();
-  
   return (
-    <CardContainer onClick={handleCardClick}>
-      <ImageContainer>
-        {imageUrl ? (
-          <ArticleImage src={imageUrl} alt={title} />
-        ) : (
-          <ImagePlaceholder>No image available</ImagePlaceholder>
-        )}
-      </ImageContainer>
-      
-      <CardContent>
-        {displayTags.length > 0 && (
-          <TagsContainer>
-            {displayTags.map((tag, index) => (
-              <Tag key={index} onClick={(e) => handleTagClick(tag, e)}>{tag}</Tag>
-            ))}
-          </TagsContainer>
-        )}
-        
-        <CardTitle>{title}</CardTitle>
-        <CardExcerpt>{excerpt}</CardExcerpt>
-        
-        <CardMeta>
-          <CardDate>{formattedDate}</CardDate>
-        </CardMeta>
-      </CardContent>
-    </CardContainer>
-  );
-};
+    <Card to={`/articles/${_id}`}>
+      <ContentSection>
+        {tags[0] && <Category>{tags[0]}</Category>}
+        <Title>{title}</Title>
+        <Summary>{summary || 'This is the summary.'}</Summary>
+        <ReadMore>Read more </ReadMore>
+      </ContentSection>
 
-ArticleCard.propTypes = {
-  article: PropTypes.shape({
-    _id: PropTypes.string.isRequired,
-    title: PropTypes.string.isRequired,
-    article_content: PropTypes.oneOfType([
-      PropTypes.string,
-      PropTypes.object
-    ]),
-    cover_picture_url: PropTypes.string,
-    published_date: PropTypes.string,
-    tags: PropTypes.arrayOf(PropTypes.string)
-  }).isRequired
+      <ImageSection>
+        <AuthorsSection>
+          {authors.map((author, index) => (
+            <AuthorGroup key={author._id || index}>
+              <AuthorImage 
+                src={author.image || `https://api.dicebear.com/7.x/identicon/svg?seed=${author.name || 'author'}`}
+                alt={author.name || 'Author'}
+              />
+              <AuthorInfo>
+                <AuthorName>{author.name}</AuthorName>
+                <AuthorRole>{author.role}</AuthorRole>
+              </AuthorInfo>
+            </AuthorGroup>
+          ))}
+        </AuthorsSection>
+        <ImageContainer>
+          <CoverImage 
+            src={cover_picture_url || 'https://via.placeholder.com/800x600/181b2a/ffffff?text=No+Image'} 
+            alt={title}
+          />
+        </ImageContainer>
+      </ImageSection>
+    </Card>
+  );
 };
 
 export default ArticleCard; 

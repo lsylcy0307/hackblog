@@ -13,7 +13,7 @@ const PageContainer = styled.div`
 const MainContent = styled.main`
   flex: 1;
   padding: ${theme.spacing.xl} ${theme.spacing.xl};
-  max-width: ${theme.containers.xl};
+  max-width: ${theme.containers.lg};
   margin: 0 auto;
   width: 100%;
 `;

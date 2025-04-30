@@ -142,7 +142,7 @@ const StyledButton = styled.button`
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: ${theme.borderRadius.md};
+  border-radius: 20px;
   font-weight: 500;
   transition: all 0.2s ease-in-out;
   cursor: pointer;

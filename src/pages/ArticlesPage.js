@@ -31,6 +31,14 @@ const PageTitle = styled.h1`
   }
 `;
 
+const BlogHeading = styled.h1`
+  margin-left: ${theme.spacing.md};
+  font-size: 1.3rem;
+  font-weight: 500;
+  color: ${theme.colors.text};
+  margin-bottom: ${theme.spacing.md};
+`;
+
 const SubTitle = styled.p`
   font-size: 1.25rem;
   color: ${theme.colors.lightText};
@@ -48,8 +56,6 @@ const CategoryFilterContainer = styled.div`
 `;
 
 const ArticlesGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: ${theme.spacing.lg};
   margin-bottom: ${theme.spacing.xl};
 `;
@@ -73,6 +79,11 @@ const NoResults = styled.div`
   border-radius: ${theme.borderRadius.lg};
   margin: ${theme.spacing.xl} 0;
 `;
+
+const capitalize = (word) => {
+  if (!word) return '';
+  return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+}
 
 // Parse query params
 const useQuery = () => {
@@ -168,13 +179,7 @@ const ArticlesPage = () => {
 
   return (
     <Layout>
-      <PageHeader>
-        <PageTitle>Articles</PageTitle>
-        <SubTitle>
-          Explore our collection of articles on engineering, products, impact, and nonprofits.
-        </SubTitle>
-      </PageHeader>
-      
+      <BlogHeading>{capitalize(activeTag)}</BlogHeading>
       <CategoryFilterContainer>
         {categories.map(category => (
           <Button

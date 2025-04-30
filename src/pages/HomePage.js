@@ -1,106 +1,92 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import Layout from '../components/layout/Layout';
 import ArticleCard from '../components/articles/ArticleCard';
+import FeaturedArticleCard from '../components/articles/FeaturedArticleCard';
 import Spinner from '../components/common/Spinner';
 import Button from '../components/common/Button';
 import apiService from '../utils/api';
 import theme from '../utils/theme';
+import ScrollDownArrow from '../components/common/ScrollDownArrow';
 
-const HeroSection = styled.section`
-  background-color: ${theme.colors.darkBackground};
-  color: white;
-  padding: ${theme.spacing.xxl} 0;
-  margin: -${theme.spacing.xl} -${theme.spacing.xl} ${theme.spacing.xl};
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-`;
 
-const HeroTitle = styled.h1`
-  font-size: 2.5rem;
-  font-weight: 800;
-  margin-bottom: ${theme.spacing.md};
-  max-width: 800px;
-  
-  @media (min-width: ${theme.breakpoints.md}) {
-    font-size: 3.5rem;
-  }
-`;
-
-const HeroSubtitle = styled.p`
-  font-size: 1.25rem;
-  max-width: 600px;
-  margin-bottom: ${theme.spacing.lg};
-  color: ${theme.colors.lightBackground};
-`;
-
-const SectionTitle = styled.h2`
-  font-size: 1.75rem;
-  font-weight: 700;
-  margin-bottom: ${theme.spacing.lg};
-  position: relative;
-  display: inline-block;
-  
-  &:after {
-    content: '';
-    position: absolute;
-    bottom: -10px;
-    left: 0;
-    width: 60%;
-    height: 4px;
-    background-color: ${theme.colors.primary};
-    border-radius: 2px;
-  }
-`;
-
-const ArticlesGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: ${theme.spacing.lg};
+const FeaturedArticle = styled.div`
+  width: 100%;
+  margin-top: ${theme.spacing.xl};
   margin-bottom: ${theme.spacing.xl};
 `;
 
-const CategorySection = styled.section`
-  margin: ${theme.spacing.xl} 0;
+const BlogHeading = styled.h1`
+  margin-left: ${theme.spacing.md};
+  font-size: 1.3rem;
+  font-weight: 500;
+  color: ${theme.colors.text};
+  margin-bottom: 5rem;
 `;
 
-const CategoryButtons = styled.div`
+const CategoryFilterContainer = styled.div`
+  margin-top: 6rem;
   display: flex;
   flex-wrap: wrap;
   gap: ${theme.spacing.sm};
-  margin-bottom: ${theme.spacing.xl};
+  padding: ${theme.spacing.lg};
+  background-color: ${theme.colors.lightBackground};
+  border-radius: ${theme.borderRadius.lg};
 `;
 
-const CategoryButton = styled(Link)`
-  text-decoration: none;
+const ArticlesGrid = styled.div`
+  gap: ${theme.spacing.lg};
+  margin-bottom: ${theme.spacing.xl};
+  margin-top: 6rem;
+`;
+
+const ViewAllButton = styled.div`
+  margin-top: 6rem;
+  margin-left: ${theme.spacing.md};
 `;
 
 const HomePage = () => {
-  const [featuredArticles, setFeaturedArticles] = useState([]);
-  const [recentArticles, setRecentArticles] = useState([]);
+  const [featuredArticle, setFeaturedArticle] = useState(null);
+  const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [activeCategory, setActiveCategory] = useState('all');
+  const navigate = useNavigate();
+
+  const categories = [
+    { id: 'all', label: 'All' },
+    { id: 'engineering', label: 'Engineering' },
+    { id: 'products', label: 'Products' },
+    { id: 'impact', label: 'Impact' },
+    { id: 'nonprofits', label: 'Nonprofits' }
+  ];
 
   useEffect(() => {
     const fetchArticles = async () => {
       setLoading(true);
       setError(null);
       try {
-        // Get pinned articles for featured section
-        const pinnedResponse = await apiService.articles.getAll({ pinned: true, limit: 3 });
-        
-        // Get recent articles
-        const recentResponse = await apiService.articles.getAll({ 
+        // Get the most recent article for featured section
+        const featuredResponse = await apiService.articles.getAll({ 
           sort: '-published_date',
-          limit: 6,
-          pinned: false
+          limit: 1
         });
         
-        setFeaturedArticles(pinnedResponse.data.data);
-        setRecentArticles(recentResponse.data.data);
+        // Get articles for the grid
+        const params = {
+          sort: '-published_date',
+          limit: 10
+        };
+        
+        if (activeCategory !== 'all') {
+          params.tags = activeCategory;
+        }
+        
+        const articlesResponse = await apiService.articles.getAll(params);
+        
+        setFeaturedArticle(featuredResponse.data.data[0]);
+        setArticles(articlesResponse.data.data);
       } catch (error) {
         console.error('Error fetching articles:', error);
         setError('Failed to load articles. Please try again later.');
@@ -110,9 +96,16 @@ const HomePage = () => {
     };
 
     fetchArticles();
-  }, []);
+  }, [activeCategory]);
 
-  if (loading) return <Layout><Spinner size="lg" /></Layout>;
+  const handleCategoryChange = (category) => {
+    setActiveCategory(category);
+  };
+
+  const handleViewAll = () => {
+    const url = activeCategory === 'all' ? '/articles' : `/articles?tag=${activeCategory}`;
+    navigate(url);
+  };
   
   if (error) {
     return (
@@ -127,59 +120,40 @@ const HomePage = () => {
 
   return (
     <Layout>
-      <HeroSection>
-        <HeroTitle>Insights from Hack4Impact Engineering</HeroTitle>
-        <HeroSubtitle>
-          Explore our latest thoughts on technology, impact, and building products for nonprofits.
-        </HeroSubtitle>
-        <Button size="lg" onClick={() => window.location.href = '/articles'}>
-          Browse All Articles
-        </Button>
-      </HeroSection>
+      <BlogHeading>Blog</BlogHeading>
       
-      {featuredArticles.length > 0 && (
-        <section>
-          <SectionTitle>Featured Articles</SectionTitle>
-          <ArticlesGrid>
-            {featuredArticles.map(article => (
-              <ArticleCard key={article._id} article={article} />
-            ))}
-          </ArticlesGrid>
-        </section>
+      {featuredArticle && (
+        <FeaturedArticle>
+          <FeaturedArticleCard article={featuredArticle} />
+        </FeaturedArticle>
       )}
+    
       
-      <CategorySection>
-        <SectionTitle>Browse by Category</SectionTitle>
-        <CategoryButtons>
-          <CategoryButton to="/articles?tag=engineering">
-            <Button variant="outline">Engineering</Button>
-          </CategoryButton>
-          <CategoryButton to="/articles?tag=products">
-            <Button variant="outline">Products</Button>
-          </CategoryButton>
-          <CategoryButton to="/articles?tag=impact">
-            <Button variant="outline">Impact</Button>
-          </CategoryButton>
-          <CategoryButton to="/articles?tag=nonprofits">
-            <Button variant="outline">Nonprofits</Button>
-          </CategoryButton>
-        </CategoryButtons>
-      </CategorySection>
+      <CategoryFilterContainer>
+        {categories.map(category => (
+          <Button
+            key={category.id}
+            variant={activeCategory === category.id ? 'primary' : 'outline'}
+            size="sm"
+            onClick={() => handleCategoryChange(category.id)}
+          >
+            {category.label}
+          </Button>
+        ))}
+      </CategoryFilterContainer>
       
-      <section>
-        <SectionTitle>Recent Articles</SectionTitle>
-        <ArticlesGrid>
-          {recentArticles.map(article => (
-            <ArticleCard key={article._id} article={article} />
-          ))}
-        </ArticlesGrid>
-        
-        <div style={{ textAlign: 'center', marginTop: theme.spacing.xl }}>
-          <Link to="/articles">
-            <Button variant="outline">View All Articles</Button>
-          </Link>
-        </div>
-      </section>
+      <ScrollDownArrow />
+      <ArticlesGrid>
+        {articles.map(article => (
+          <ArticleCard key={article._id} article={article} />
+        ))}
+      </ArticlesGrid>
+      
+      <ViewAllButton>
+        <Button variant="primary" onClick={handleViewAll}>
+          View All Posts
+        </Button>
+      </ViewAllButton>
     </Layout>
   );
 };
