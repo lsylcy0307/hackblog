@@ -4,6 +4,7 @@ import styled from 'styled-components';
 import theme from '../../utils/theme';
 import { useAuth } from '../../context/AuthContext';
 import Button from '../common/Button';
+import Logo from './Logo';
 
 const HeaderContainer = styled.header`
   background-color: ${theme.colors.background};
@@ -20,19 +21,6 @@ const NavContainer = styled.div`
   align-items: center;
   max-width: ${theme.containers.lg};
   margin: 0 auto;
-`;
-
-const Logo = styled(Link)`
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: ${theme.colors.primary};
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-  
-  &:hover {
-    color: ${theme.colors.primary};
-  }
 `;
 
 const NavLinks = styled.nav`
@@ -146,8 +134,7 @@ const Header = () => {
   return (
     <HeaderContainer>
       <NavContainer>
-        <Logo to="/">Hack4Impact</Logo>
-        
+        <Logo />
         <ToggleButton onClick={toggleNav}>
           {navOpen ? '✕' : '☰'}
         </ToggleButton>
